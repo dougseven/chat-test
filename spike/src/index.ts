@@ -75,6 +75,7 @@ async function main(): Promise<void> {
     const response = await session.sendAndWait(goal, SEND_TIMEOUT_MS);
     if (!response) {
       console.warn("[spike] no assistant response received before timeout");
+      process.exitCode = 1;
     }
   } finally {
     unsubscribe();
