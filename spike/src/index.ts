@@ -34,6 +34,13 @@ const DEFAULT_GOAL =
   "write a short, decision-ready recommendation memo for a team choosing " +
   "between them.";
 
+/**
+ * Upper bound on how long we wait for the orchestrator's full run (including
+ * delegation to both specialists) to finish, so a hung session can't leave
+ * the process stuck and skip cleanup in the `finally` block below.
+ */
+const SEND_TIMEOUT_MS = 10 * 60 * 1000;
+
 async function main(): Promise<void> {
   const goal = process.argv.slice(2).join(" ").trim() || DEFAULT_GOAL;
 
@@ -62,12 +69,13 @@ async function main(): Promise<void> {
   });
 
   try {
-    const done = new Promise<void>((resolve) => {
-      session.on("session.idle", () => resolve());
-    });
-
-    await session.send({ prompt: goal });
-    await done;
+    // sendAndWait resolves once *this* prompt's turn produces its assistant
+    // response, rather than racing an independent `session.idle` listener
+    // that could fire early (e.g. from unrelated initialization idling).
+    const response = await session.sendAndWait(goal, SEND_TIMEOUT_MS);
+    if (!response) {
+      console.warn("[spike] no assistant response received before timeout");
+    }
   } finally {
     unsubscribe();
     await logger.close();
