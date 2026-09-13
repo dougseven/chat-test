@@ -31,9 +31,11 @@ npm run spike -- "Research X, then write a short memo about it."
 
 This will:
 
-1. Start a `CopilotClient` pointed at the repo root (so the runtime
-   auto-discovers `.github/agents/orchestrator.agent.md`,
-   `researcher.agent.md`, and `writer.agent.md`).
+1. Start a `CopilotClient` pointed at the repo root, after loading
+   `.github/agents/orchestrator.agent.md`, `researcher.agent.md`, and
+   `writer.agent.md` (via `src/loadAgents.ts`) and passing them to
+   `createSession` as `customAgents` — the SDK does not auto-discover these
+   files on its own.
 2. Create a session with the `orchestrator` custom agent selected.
 3. Send the default two-specialist demo goal (research + writing), which the
    orchestrator's restricted tool set forces it to delegate.

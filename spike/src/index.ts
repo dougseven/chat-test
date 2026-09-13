@@ -5,7 +5,8 @@
  *
  *  - P0.1: establish a Copilot SDK session that loads the three
  *    `.github/agents/*.agent.md` custom agents (orchestrator, researcher,
- *    writer).
+ *    writer). The SDK does not auto-discover these files, so `loadAgents.ts`
+ *    parses them and passes them to `createSession` as `customAgents`.
  *  - P0.2: force delegation by giving the orchestrator a goal that requires
  *    both specialists, and by restricting its tools so it cannot quietly do
  *    the work itself (enforced in orchestrator.agent.md).
@@ -19,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { CopilotClient, approveAll } from "@github/copilot-sdk";
 import { RawEventLogger } from "./rawEventLogger.js";
+import { loadCustomAgents } from "./loadAgents.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,6 +51,15 @@ async function main(): Promise<void> {
   console.log(`[spike] raw event trace: ${logger.filePath}`);
   console.log(`[spike] goal: ${goal}`);
 
+  // The SDK does not auto-discover `.github/agents/*.agent.md` files; they
+  // must be loaded and passed explicitly as `customAgents` below.
+  const agentsDir = path.join(REPO_ROOT, ".github", "agents");
+  const customAgents = await loadCustomAgents(agentsDir);
+  console.log(
+    `[spike] loaded ${customAgents.length} custom agent(s) from ${agentsDir}: ` +
+      customAgents.map((agent) => agent.name).join(", ")
+  );
+
   const client = new CopilotClient({
     workingDirectory: REPO_ROOT,
   });
@@ -58,6 +69,7 @@ async function main(): Promise<void> {
 
   const session = await client.createSession({
     agent: "orchestrator",
+    customAgents,
     onPermissionRequest: approveAll,
     includeSubAgentStreamingEvents: true,
   });
