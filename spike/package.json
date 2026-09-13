@@ -1,0 +1,24 @@
+{
+  "name": "crew-chat-spike",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spike 0 for the Copilot Crew Chat prototype: prove native delegation, specialist identity, and raw SDK events before building any UI.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/index.ts",
+    "spike": "tsx src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@github/copilot-sdk": "^1.0.13"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}
