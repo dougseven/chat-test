@@ -15,6 +15,21 @@ import type { CustomAgentConfig } from "@github/copilot-sdk";
 
 const FRONTMATTER_DELIMITER = "---";
 
+/**
+ * Strips a single layer of matching surrounding single or double quotes
+ * from a YAML scalar, e.g. `"orchestrator"` -> `orchestrator`.
+ */
+function unquote(value: string): string {
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
 interface ParsedAgentFile {
   name: string;
   description?: string;
@@ -55,7 +70,7 @@ function parseAgentFile(raw: string, filePath: string): ParsedAgentFile {
     if (listItemMatch && currentListKey) {
       const list = values[currentListKey];
       if (Array.isArray(list)) {
-        list.push(listItemMatch[1].trim());
+        list.push(unquote(listItemMatch[1].trim()));
       }
       continue;
     }
@@ -64,11 +79,12 @@ function parseAgentFile(raw: string, filePath: string): ParsedAgentFile {
     if (!keyValueMatch) continue;
 
     const [, key, rawValue] = keyValueMatch;
-    if (rawValue.trim() === "") {
+    const trimmedValue = rawValue.trim();
+    if (trimmedValue === "") {
       values[key] = [];
       currentListKey = key;
     } else {
-      values[key] = rawValue.trim();
+      values[key] = unquote(trimmedValue);
       currentListKey = null;
     }
   }
