@@ -10,6 +10,7 @@
  * as the agent's `prompt`).
  */
 import { readFile, readdir } from "node:fs/promises";
+import type { Dirent } from "node:fs";
 import path from "node:path";
 import type { CustomAgentConfig } from "@github/copilot-sdk";
 
@@ -76,7 +77,12 @@ function parseAgentFile(raw: string, filePath: string): ParsedAgentFile {
     }
 
     const keyValueMatch = /^([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
-    if (!keyValueMatch) continue;
+    if (!keyValueMatch) {
+      // Blank line, comment, or otherwise unrecognized — don't let a
+      // stray line keep appending to the previous list key.
+      currentListKey = null;
+      continue;
+    }
 
     const [, key, rawValue] = keyValueMatch;
     const trimmedValue = rawValue.trim();
@@ -112,16 +118,19 @@ function parseAgentFile(raw: string, filePath: string): ParsedAgentFile {
 export async function loadCustomAgents(
   agentsDir: string
 ): Promise<CustomAgentConfig[]> {
-  let entries: string[];
+  let entries: Dirent[];
   try {
-    entries = await readdir(agentsDir);
+    entries = await readdir(agentsDir, { withFileTypes: true });
   } catch (error) {
     throw new Error(
       `failed to read agents directory ${agentsDir}: ${(error as Error).message}`
     );
   }
 
-  const agentFiles = entries.filter((entry) => entry.endsWith(".agent.md")).sort();
+  const agentFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".agent.md"))
+    .map((entry) => entry.name)
+    .sort();
 
   const agents: CustomAgentConfig[] = [];
   for (const fileName of agentFiles) {
