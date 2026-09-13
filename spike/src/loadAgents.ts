@@ -43,6 +43,10 @@ interface ParsedAgentFile {
  * `key: value` pairs and single-level `key:` list blocks (`  - item`).
  * This intentionally isn't a general YAML parser — just enough for
  * `name`, `description`, and `tools`.
+ *
+ * Not supported: inline comments (`key: value # comment`), nested lists or
+ * maps, multi-line scalars (`|`, `>`), and anchors/aliases. Agent files
+ * should stick to flat scalar keys and single-level list blocks.
  */
 function parseAgentFile(raw: string, filePath: string): ParsedAgentFile {
   const lines = raw.split(/\r?\n/);
